@@ -8,3 +8,6 @@ app.include_router(health.router)
 @app.get("/")
 def root():
     return {"message": "Life Engine API is running!"}
+
+from app.auth.routes import router as auth_router
+app.include_router(auth_router)
