@@ -6,7 +6,7 @@ from app import models
 
 app = FastAPI(title="Life Engine API")
 
-# Create all tables
+# Create tables at startup
 Base.metadata.create_all(bind=engine)
 
 # Routers
