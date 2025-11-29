@@ -1,14 +1,13 @@
-from passlib.context import CryptContext
+from pydantic import BaseModel, EmailStr
 
-pwd_cxt = CryptContext(schemes=["bcrypt"], deprecated="auto")
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str
 
-class Hasher:
-    @staticmethod
-    def hash_password(password: str):
-        password = password[:72]       # Prevent bcrypt >72 byte crash
-        return pwd_cxt.hash(password)
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
 
-    @staticmethod
-    def verify_password(plain: str, hashed: str):
-        plain = plain[:72]
-        return pwd_cxt.verify(plain, hashed)
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str
