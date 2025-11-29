@@ -1,20 +1,16 @@
 from fastapi import FastAPI
-
 from app.database import Base, engine
-from app import models
-
-from app.routers import health
 from app.auth.routes import router as auth_router
 
-# Important: Create database tables on startup
+# Create database tables
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Life Engine API", version="0.1.0")
+app = FastAPI(title="Life Engine API")
 
-# Routers
-app.include_router(health.router)
-app.include_router(auth_router)
+# Health check
+@app.get("/health/")
+def health_check():
+    return {"status": "ok"}
 
-@app.get("/")
-def root():
-    return {"message": "Life Engine API running"}
+# Mount auth router
+app.include_router(auth_router, prefix="/auth", tags=["auth"])
