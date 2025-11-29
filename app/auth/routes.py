@@ -2,31 +2,20 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
+from app.auth.schemas import RegisterRequest, LoginRequest
 from app.auth.hashing import Hasher
-from pydantic import BaseModel
+from app.auth.jwt_handler import create_access_token, verify_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-class RegisterRequest(BaseModel):
-    email: str
-    password: str
-
-
-class LoginRequest(BaseModel):
-    email: str
-    password: str
-
-
 @router.post("/register")
 def register_user(request: RegisterRequest, db: Session = Depends(get_db)):
-    # Check if email already exists
-    existing = db.query(User).filter(User.email == request.email).first()
-    if existing:
+    user = db.query(User).filter(User.email == request.email).first()
+    if user:
         raise HTTPException(status_code=400, detail="Email already registered")
 
     hashed_pw = Hasher.hash_password(request.password)
-
     new_user = User(email=request.email, password_hash=hashed_pw)
     db.add(new_user)
     db.commit()
@@ -38,10 +27,29 @@ def register_user(request: RegisterRequest, db: Session = Depends(get_db)):
 @router.post("/login")
 def login(request: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == request.email).first()
+
     if not user:
-        raise HTTPException(status_code=400, detail="Invalid email or password")
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
     if not Hasher.verify_password(request.password, user.password_hash):
-        raise HTTPException(status_code=400, detail="Invalid email or password")
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    return {"message": "Login successful", "user_id": user.id}
+    access_token = create_access_token({"user_id": user.id})
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
+
+
+@router.get("/me")
+def get_me(token: str, db: Session = Depends(get_db)):
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    user = db.query(User).filter(User.id == payload["user_id"]).first()
+    return {
+        "id": user.id,
+        "email": user.email
+    }
