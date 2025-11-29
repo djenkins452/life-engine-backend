@@ -1,14 +1,21 @@
 from datetime import datetime, timedelta
-from jose import jwt
+from jose import JWTError, jwt
 
-SECRET_KEY = "LIFEENGINE_SUPER_SECRET_KEY"   # Change later!
+SECRET_KEY = "YOUR_SECRET_KEY_HERE"  # replace with long random string
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-def create_access_token(data: dict):
+
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
-    encoded = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
+
+def verify_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        return None
