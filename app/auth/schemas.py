@@ -1,22 +1,14 @@
-from pydantic import BaseModel, Field, EmailStr
+from passlib.context import CryptContext
 
-class RegisterRequest(BaseModel):
-    email: EmailStr
-    password: str = Field(
-        ...,
-        min_length=6,
-        max_length=72,
-        description="Password must be between 6 and 72 characters because bcrypt cannot hash more than 72 bytes."
-    )
+pwd_cxt = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str = Field(
-        ...,
-        min_length=1,
-        description="User's password"
-    )
+class Hasher:
+    @staticmethod
+    def hash_password(password: str):
+        password = password[:72]       # Prevent bcrypt >72 byte crash
+        return pwd_cxt.hash(password)
 
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
+    @staticmethod
+    def verify_password(plain: str, hashed: str):
+        plain = plain[:72]
+        return pwd_cxt.verify(plain, hashed)
