@@ -1,6 +1,6 @@
 from passlib.context import CryptContext
 
-pwd_cxt = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_cxt = CryptContext(schemes=["argon2"], deprecated="auto")
 
 class Hasher:
     @staticmethod
@@ -10,4 +10,3 @@ class Hasher:
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str):
         return pwd_cxt.verify(plain_password, hashed_password)
-
