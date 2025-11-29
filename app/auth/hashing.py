@@ -1,6 +1,9 @@
 from passlib.context import CryptContext
 
-pwd_cxt = CryptContext(schemes=["argon2"], deprecated="auto")
+pwd_cxt = CryptContext(
+    schemes=["pbkdf2_sha256"],
+    deprecated="auto"
+)
 
 class Hasher:
     @staticmethod
