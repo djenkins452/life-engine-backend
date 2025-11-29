@@ -7,5 +7,4 @@ app = FastAPI()
 def health():
     return {"status": "ok"}
 
-# MOUNT THE ROUTER (Critical line)
 app.include_router(metrics_router, prefix="/api")
