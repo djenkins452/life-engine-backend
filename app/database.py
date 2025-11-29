@@ -2,24 +2,21 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 import os
 
-# Load DB URL from Render environment variable
+# Environment variable from Render dashboard
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Create engine
-engine = create_engine(
-    DATABASE_URL,
-    echo=False,
-    future=True
-)
+# Required for SQLAlchemy + PostgreSQL
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# SessionLocal is used for dependency injection in routes
+engine = create_engine(DATABASE_URL)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Base is the class all models inherit from
 Base = declarative_base()
 
 
-# Dependency used in routes
+# Dependency for routes
 def get_db():
     db = SessionLocal()
     try:
