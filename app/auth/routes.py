@@ -1,53 +1,41 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 
-from app.database import get_db
-from app.models import User
-from app.auth.hashing import Hasher
 from app.auth.schemas import RegisterRequest, LoginRequest, TokenResponse
-from app.auth.token import create_access_token, verify_access_token
+from app.auth.hashing import Hasher
+from app.auth.jwt_handler import create_access_token
+from app.models import User
+from app.database import get_db
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+@router.get("/health/")
+def auth_health():
+    return {"status": "auth ok"}
 
-
-# ---------------------------------------------------------
-# REGISTER USER
-# ---------------------------------------------------------
 @router.post("/register")
 def register_user(request: RegisterRequest, db: Session = Depends(get_db)):
-    # Check if user exists
-    existing_user = db.query(User).filter(User.email == request.email).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+    existing = db.query(User).filter(User.email == request.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already exists")
 
-    # Hash password
     hashed_pw = Hasher.hash_password(request.password)
-
-    # Create user
-    new_user = User(email=request.email, password_hash=hashed_pw)
-    db.add(new_user)
+    user = User(email=request.email, password_hash=hashed_pw)
+    db.add(user)
     db.commit()
-    db.refresh(new_user)
+    db.refresh(user)
 
-    return {"message": "User created", "user_id": new_user.id}
+    return {"message": "User created", "user_id": user.id}
 
-
-# ---------------------------------------------------------
-# LOGIN — returns JWT token
-# ---------------------------------------------------------
 @router.post("/login", response_model=TokenResponse)
 def login(request: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == request.email).first()
+    if not user or not Hasher.verify_password(request.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    token = create_access_token({"sub": str(user.id)})
+    return TokenResponse(access_token=token)
 
-    # Verify password
-    if not Hasher.verify_password(request.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    # Create access token
-    access_token =_
+@router.get("/me")
+def me(db: Session = Depends(get_db)):
+    return {"message": "me endpoint working"}
