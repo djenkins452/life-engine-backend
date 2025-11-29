@@ -1,13 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-import os
 
-# Environment variable from Render dashboard
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-# Required for SQLAlchemy + PostgreSQL
-if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+DATABASE_URL = "postgresql+psycopg2://life_engine_user:life_engine_pass@dpg-ctxdbksqf0us73fhej0g-a.ohio-postgres.render.com/life_engine"
 
 engine = create_engine(DATABASE_URL)
 
@@ -15,8 +9,6 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
-
-# Dependency for routes
 def get_db():
     db = SessionLocal()
     try:
